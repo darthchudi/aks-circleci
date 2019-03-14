@@ -9,7 +9,7 @@ export default class HelloController {
   sayHello(req: Request, res: Response) {
     res.jSend.success({
       message: "I'm alive!",
-      environment: env.node_env,
+      environment: env.app_env,
       name: env.service_name,
       port: env.port,
     });

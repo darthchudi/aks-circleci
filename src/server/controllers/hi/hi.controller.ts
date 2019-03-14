@@ -9,7 +9,7 @@ export default class HiController {
   sayHi(req: Request, res: Response) {
     res.jSend.success({
       message: "I'm a new feature! Hi!",
-      environment: env.node_env,
+      environment: env.app_env,
       name: env.service_name,
       port: env.port,
     });
