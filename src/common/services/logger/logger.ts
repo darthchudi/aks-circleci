@@ -1,6 +1,6 @@
 import bunyan from 'bunyan';
 import { Request, Response } from 'express';
-import { reqSerializer } from './serializers';
+import { reqSerializer, resSerializer, errSerializer } from './serializers';
 import env from '@app/common/config/env';
 
 interface ILogger {
@@ -17,11 +17,31 @@ class Logger implements ILogger {
     this.log = bunyan.createLogger({
       name,
       serializers: {
-        err: bunyan.stdSerializers.err,
-        res: bunyan.stdSerializers.res,
+        err: errSerializer,
+        res: resSerializer,
         req: reqSerializer,
       },
     });
+
+    /**
+     * Overrides the default bunyan log fields and formats it into a format Logstash/Elastic Search
+     * understands (for uniform indexing) in production or staging.
+     */
+    if (['production', 'staging'].includes(env.app_env)) {
+      // @ts-ignore
+      this.log._emit = (rec, noemit) => {
+        rec.message = rec.msg;
+        rec.timestamp = rec.time;
+
+        delete rec.msg;
+        delete rec.time;
+        delete rec.v;
+
+        //@ts-ignore
+        // Call the default bunyan emit function with the modified log record
+        bunyan.prototype._emit.call(this.log, rec, noemit);
+      };
+    }
   }
 
   /**
@@ -30,8 +50,8 @@ class Logger implements ILogger {
    * @param err Error object
    * @param message Additional information about the error.
    */
-  error(err: Error, message?: any) {
-    this.log.error({ err }, message);
+  error(err: Error, errInfo?: any) {
+    this.log.error({ err, ...errInfo });
   }
 
   /**
@@ -58,7 +78,9 @@ class Logger implements ILogger {
   logAPIResponse(req: Request, res: Response) {
     this.log.info({
       res,
-      request_id: req.id,
+      req: {
+        id: req.id,
+      },
     });
   }
 
@@ -73,7 +95,9 @@ class Logger implements ILogger {
     this.log.error({
       err,
       res,
-      request_id: req.id,
+      req: {
+        id: req.id,
+      },
     });
   }
 }

@@ -1,4 +1,5 @@
-import { Request } from 'express';
+import { Request, Response } from 'express';
+import bunyan from 'bunyan';
 
 /**
  * Prevents passwords, credit card details etc from being logged.
@@ -20,9 +21,36 @@ export const reqSerializer = (req: Request) => {
     origin_service: req.headers['x-origin-service'],
     remoteAddress: req.connection.remoteAddress,
     remotePort: req.connection.remotePort,
-    request_id: req.id,
+    id: req.id,
     ...(req.body || Object.keys(req.body).length !== 0
       ? { body: removeSensitiveData(req.body) }
       : undefined),
+  };
+};
+
+/**
+ * Serializes an Express response for Bunyan logging
+ * @param res Express response object
+ */
+export const resSerializer = (res: Response) => {
+  if (!res || !res.statusCode) return res;
+  return {
+    statusCode: res.statusCode,
+    // @ts-ignore
+    headers: res._headers,
+  };
+};
+
+/**
+ * Extends the standard bunyan error serializer and allows custom fields to be added to the error log
+ */
+export const errSerializer = (err: any) => {
+  const { url, data, req } = err;
+  const bunyanSanitizedError = bunyan.stdSerializers.err(err);
+  return {
+    ...bunyanSanitizedError,
+    url,
+    data,
+    req,
   };
 };
