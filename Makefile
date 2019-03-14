@@ -30,7 +30,9 @@ deploy: init-helm
 	@echo "Installing app in K8s cluster"
 	@helm repo add <InsertHelmRepoName> https://<InsertHelmRepoName>.github.io/helm-charts
 	@helm repo update
-	@helm upgrade ${APP_NAME} <InsertHelmRepoName>/${APP_NAME} --install --debug --recreate-pods ${HELM_ARGS} --tiller-namespace ${APP_ENV} --namespace ${APP_ENV}
+	# Uncomment the line to below to force the pods to be recreated
+	# @helm upgrade ${APP_NAME} <InsertHelmRepoName>/${APP_NAME} --install --debug --recreate-pods ${HELM_ARGS} --tiller-namespace ${APP_ENV} --namespace ${APP_ENV}
+	@helm upgrade ${APP_NAME} <InsertHelmRepoName>/${APP_NAME} --install --debug ${HELM_ARGS} --tiller-namespace ${APP_ENV} --namespace ${APP_ENV}
 
 .PHONY: init-helm
 init-helm:
